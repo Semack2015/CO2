@@ -6,6 +6,15 @@ void setup() {
   digitalWrite(12, HIGH);
   Serial.begin(9600);
   Serial1.begin(9600);
+  pinMode(3, OUTPUT);
+  pinMode(4, OUTPUT);
+  pinMode(5, OUTPUT);
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
 }
 
 int state = 1;
@@ -31,6 +40,26 @@ int waiter;
 //  }
 //}
 
+byte checkSum(byte *ar){
+  byte checksum = 0;
+  for(int i = 1; i<8; i++){
+    checksum+=ar[i];
+  }
+  checksum = 0xff-checksum+1;
+  return checksum;
+}
+
+void Led(int c){
+  for(int i = 3; i<=11; i++) digitalWrite(i, LOW); 
+  int z = 11;
+  while(c>400){
+    digitalWrite(z, HIGH);
+    z--;
+    if(z<3) break;
+    c-=550;
+  }
+}
+
 void loop() {
   byte tmp;
   
@@ -40,14 +69,14 @@ void loop() {
       in[i]=0x00;  
     }
     state = 2;
-    waiter = 50;
+    waiter = 100;
     Serial.println("Packet Transieved");
   }
   if(state==2){
     //Serial.print("Stage 2 ");
     if(0||Serial1.available()){
       //Serial.print(" Available ");
-      waiter = 50;
+      waiter = 100;
       tmp = Serial1.read();
       
       if(tmp==0xff){
@@ -80,7 +109,12 @@ void loop() {
     }
   }
   if(state==3){
-    Serial.println("OK");
+    Serial.print(checkSum(in));
+    Serial.print('_');
+    Serial.print(in[8]);
+    Serial.print(' ');
+    Serial.println((int)in[2]*256 + (int)in[3]);
+    Led((int)in[2]*256 + (int)in[3]);
     state = 1;
     delay(1000);
   }
