@@ -35,7 +35,6 @@ void loop() {
   byte tmp;
   
   if(state==1){
-    //delay(100);
     for(int i = 0; i<9; i++){
       Serial1.write(x[i]);
       in[i]=0x00;  
