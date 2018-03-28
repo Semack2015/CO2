@@ -51,19 +51,19 @@ byte checkSum(byte *ar){
 
 void Led(int c){
   for(int i = 3; i<=11; i++) digitalWrite(i, LOW); 
-  int z = 11;
-  while(c>400){
+  int z = 3;
+  while(c>200){
     digitalWrite(z, HIGH);
-    z--;
-    if(z<3) break;
-    c-=550;
+    z++;
+    if(z>11) break;
+    c-=250;
   }
 }
 
 void loop() {
   byte tmp;
   
-  if(state==1){
+  if(Serial.read()=='='&&state==1){
     for(int i = 0; i<9; i++){
       Serial1.write(x[i]);
       in[i]=0x00;  
@@ -76,21 +76,21 @@ void loop() {
     //Serial.print("Stage 2 ");
     if(0||Serial1.available()){
       //Serial.print(" Available ");
-      waiter = 100;
+      waiter = 50;
       tmp = Serial1.read();
       
       if(tmp==0xff){
         //Serial.println("0xff");
         k=0;
         in[k]=tmp;
-        Serial.print(tmp);
-        Serial.print(' ');
+        //Serial.print(tmp);
+        //Serial.print(' ');
       }
       else{
         k++;
         in[k]=tmp;
-        Serial.print(tmp);
-        Serial.print(' ');
+        //Serial.print(tmp);
+        //Serial.print(' ');
         if(k>=8){
           state = 3;
           k = 0;
@@ -109,13 +109,10 @@ void loop() {
     }
   }
   if(state==3){
-    Serial.print(checkSum(in));
-    Serial.print('_');
-    Serial.print(in[8]);
-    Serial.print(' ');
-    Serial.println((int)in[2]*256 + (int)in[3]);
+    if(checkSum(in)==in[8]) Serial.println((int)in[2]*256 + (int)in[3]);
+    else Serial.println("CheckSum failed");
     Led((int)in[2]*256 + (int)in[3]);
     state = 1;
-    delay(1000);
+    //delay(500);
   }
 }
