@@ -1,4 +1,4 @@
-#define WAIT_TIME 500000
+#define WAITER 50
 
 void setup() {
   // put your setup code here, to run once:
@@ -69,14 +69,14 @@ void loop() {
       in[i]=0x00;  
     }
     state = 2;
-    waiter = 100;
-    Serial.println("Packet Transieved");
+    waiter = WAITER;
+    //Serial.println("Packet Transieved");
   }
   if(state==2){
     //Serial.print("Stage 2 ");
     if(0||Serial1.available()){
       //Serial.print(" Available ");
-      waiter = 50;
+      waiter = WAITER;
       tmp = Serial1.read();
       
       if(tmp==0xff){
@@ -109,7 +109,13 @@ void loop() {
     }
   }
   if(state==3){
-    if(checkSum(in)==in[8]) Serial.println((int)in[2]*256 + (int)in[3]);
+    if(checkSum(in)==in[8]) {
+      Serial.print(in[2]);
+      //Serial.print(' ');
+      Serial.println(in[3]);
+//      Serial.print('_');
+//      Serial.println((int)in[2]*256 + (int)in[3]);
+    }
     else Serial.println("CheckSum failed");
     Led((int)in[2]*256 + (int)in[3]);
     state = 1;
