@@ -56,7 +56,7 @@ void Led(int c){
     digitalWrite(z, HIGH);
     z++;
     if(z>11) break;
-    c-=250;
+    c-=450;
   }
 }
 
@@ -104,19 +104,19 @@ void loop() {
         state = 1;
         k = 0;
         delay(10);
-        Serial.println("BREAK");
+        //Serial.println("BREAK");
       }
     }
   }
   if(state==3){
     if(checkSum(in)==in[8]) {
       Serial.print(in[2]);
-      //Serial.print(' ');
+      Serial.print(' ');
       Serial.println(in[3]);
 //      Serial.print('_');
 //      Serial.println((int)in[2]*256 + (int)in[3]);
     }
-    else Serial.println("CheckSum failed");
+    //else Serial.println("CheckSum failed");
     Led((int)in[2]*256 + (int)in[3]);
     state = 1;
     //delay(500);
