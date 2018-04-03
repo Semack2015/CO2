@@ -104,7 +104,7 @@ void loop() {
         state = 1;
         k = 0;
         delay(10);
-        //Serial.println("BREAK");
+        Serial.println("BREAK");
       }
     }
   }
@@ -116,7 +116,7 @@ void loop() {
 //      Serial.print('_');
 //      Serial.println((int)in[2]*256 + (int)in[3]);
     }
-    //else Serial.println("CheckSum failed");
+    else Serial.println("CheckSum failed");
     Led((int)in[2]*256 + (int)in[3]);
     state = 1;
     //delay(500);
