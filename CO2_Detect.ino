@@ -18,10 +18,12 @@ void setup() {
 }
 
 int state = 1;
+bool heat = 0;
 byte x[] = {0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
 byte in[9];
 int k = 0;
 int waiter;
+int value;
  
 //int ansAvailable(void){
 //  int cnt = WAIT_TIME;
@@ -62,8 +64,13 @@ void Led(int c){
 
 void loop() {
   byte tmp;
+
+  if(millis()>100000) heat = 1;
+  else Serial.println("Preheat");
   
-  if(Serial.read()=='='&&state==1){
+  if(Serial.read()=='=') Serial.println(value);
+  
+  if(state==1&&heat){
     for(int i = 0; i<9; i++){
       Serial1.write(x[i]);
       in[i]=0x00;  
@@ -110,15 +117,17 @@ void loop() {
   }
   if(state==3){
     if(checkSum(in)==in[8]) {
-      Serial.print(in[2]);
-      Serial.print(' ');
-      Serial.println(in[3]);
+//      Serial.print(in[2]);
+//      Serial.print(' ');
+//      Serial.println(in[3]);
 //      Serial.print('_');
 //      Serial.println((int)in[2]*256 + (int)in[3]);
+      value = (int)in[2]*256 + (int)in[3];
+      
     }
     else Serial.println("CheckSum failed");
-    Led((int)in[2]*256 + (int)in[3]);
+    Led(value);
     state = 1;
-    //delay(500);
+    delay(50);
   }
 }
