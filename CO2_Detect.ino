@@ -6,15 +6,8 @@ void setup() {
   digitalWrite(12, HIGH);
   Serial.begin(9600);
   Serial1.begin(9600);
-  pinMode(3, OUTPUT);
-  pinMode(4, OUTPUT);
-  pinMode(5, OUTPUT);
-  pinMode(6, OUTPUT);
-  pinMode(7, OUTPUT);
-  pinMode(8, OUTPUT);
-  pinMode(9, OUTPUT);
-  pinMode(10, OUTPUT);
-  pinMode(11, OUTPUT);
+  for(int i = 3; i<=11; i++)
+    pinMode(i, OUTPUT);
 }
 
 int state = 1;
@@ -24,6 +17,7 @@ byte in[9];
 int k = 0;
 int waiter;
 int value;
+String str = "Preheat";
  
 //int ansAvailable(void){
 //  int cnt = WAIT_TIME;
@@ -62,13 +56,18 @@ void Led(int c){
   }
 }
 
+uint32_t wtime;
+
 void loop() {
   byte tmp;
 
-  if(millis()>100000) heat = 1;
-  else Serial.println("Preheat");
+  if(!heat) wtime = millis();
+  if(wtime>100000&&!heat){
+    heat = 1;
+    str = "Preheat";
+  }
   
-  if(Serial.read()=='=') Serial.println(value);
+  if(Serial.read()=='=') Serial.println(str);
   
   if(state==1&&heat){
     for(int i = 0; i<9; i++){
@@ -111,21 +110,20 @@ void loop() {
         state = 1;
         k = 0;
         delay(10);
-        Serial.println("BREAK");
+        // Serial.println("BREAK");
+        str = "BREAK";
       }
     }
   }
   if(state==3){
     if(checkSum(in)==in[8]) {
-//      Serial.print(in[2]);
-//      Serial.print(' ');
-//      Serial.println(in[3]);
-//      Serial.print('_');
-//      Serial.println((int)in[2]*256 + (int)in[3]);
       value = (int)in[2]*256 + (int)in[3];
-      
+      str = String(value);
     }
-    else Serial.println("CheckSum failed");
+    else {
+      //Serial.println("CheckSum failed");
+      str = "Checksum failed";
+    }
     Led(value);
     state = 1;
     delay(50);
