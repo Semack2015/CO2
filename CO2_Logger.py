@@ -22,8 +22,9 @@ while(1):
     a1 = -1
     ser.write(b'=')
     a = ser.readline()
-    a = str(a)
     # print(a)
+    a = str(a)
+
     # a = a.replace('\'', '')
     # a = a.replace('b', '')
     # a = a.replace('\\', '')
@@ -41,6 +42,8 @@ while(1):
                 a = "Preheat"
             else:
                 a = re.sub('[^0123456789]', "", a)
+                if a != '':
+                    a1 = int(a)
             # if a.split(' ').__len__() == 2:
             #     if a.split(' ')[0] != '':
             #         a1 = int(a.split(' ')[0])
@@ -50,7 +53,7 @@ while(1):
     # a3 = a1 * 256 + a2
 
     if a1 == -1:
-        print(time.strftime("%d.%m.%Y\t%H:%M:%S"), '\t', a)
+        print(time.strftime("%d.%m.%Y %H:%M:%S"), '\t', a)
         file = open('Port_Log.txt', 'a')
         file.write(time.strftime("%d.%m.%Y\t%H:%M:%S"))
         file.write('\t')
@@ -58,10 +61,9 @@ while(1):
         file.write('\n')
         file.close()
     else:
-        print(time.strftime("%d.%m.%Y\t%H:%M:%S"), '\t', a1)
-        # date = time.strftime("%d.%m.%Y CO2_Log.txt")
-        date = 'CO2_Logger.txt'
-        file = open(date, 'a')
+        print(time.strftime("%d.%m.%Y %H:%M:%S"), '\t', a1)
+        date = time.strftime("%d.%m.%Y CO2_Log.txt")
+        file = open(date, 'a+')
         file.write(time.strftime("%d.%m.%Y\t%H:%M:%S"))
         file.write('\t')
         file.write(str(a1))
