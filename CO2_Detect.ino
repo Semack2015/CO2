@@ -1,12 +1,16 @@
 #define WAITER 50
 
+#include <OneWire.h>
+OneWire ds(13);
+
+
 void setup() {
   // put your setup code here, to run once:
   pinMode(12, OUTPUT);
   digitalWrite(12, HIGH);
   Serial.begin(9600);
   Serial1.begin(9600);
-  for(int i = 3; i<=11; i++)
+  for(int i = 3; i<=12; i++)
     pinMode(i, OUTPUT);
 }
 
@@ -18,6 +22,8 @@ int k = 0;
 int waiter;
 int value;
 String str = "Preheat";
+int Temp;
+bool temper=0;
  
 //int ansAvailable(void){
 //  int cnt = WAIT_TIME;
@@ -57,6 +63,10 @@ void Led(int c){
 }
 
 uint32_t wtime;
+uint32_t temptime;
+uint32_t buzztime;
+bool buzz=0;
+byte data[2];
 
 void loop() {
   byte tmp;
@@ -68,6 +78,37 @@ void loop() {
   }
   
   if(Serial.read()=='=') Serial.println(str);
+
+  if(value>4000&&!buzz&&millis()>buzztime+1000){
+    tone(12, 432);
+    buzz = 1;
+    buzztime = millis();
+  }
+
+  if(millis()>buzztime+20&&buzz){
+    noTone(12);
+    buzz = 0;
+  }
+
+   if(temper == 0){
+      temper = 1;
+      
+      ds.reset(); 
+      ds.write(0xCC);
+      ds.write(0x44);
+      temptime = millis();
+   }
+
+  if(temper == 1&&millis()>=temptime+750){
+    ds.reset();
+    ds.write(0xCC);
+    ds.write(0xBE);
+    data[0] = ds.read(); 
+    data[1] = ds.read();
+    Temp = (data[1]<<8)+data[0];
+    Temp = Temp>>4;
+    temper = 0;
+  }
   
   if(state==1&&heat){
     for(int i = 0; i<9; i++){
@@ -84,19 +125,14 @@ void loop() {
       //Serial.print(" Available ");
       waiter = WAITER;
       tmp = Serial1.read();
-      
+
       if(tmp==0xff){
-        //Serial.println("0xff");
         k=0;
         in[k]=tmp;
-        //Serial.print(tmp);
-        //Serial.print(' ');
       }
       else{
         k++;
         in[k]=tmp;
-        //Serial.print(tmp);
-        //Serial.print(' ');
         if(k>=8){
           state = 3;
           k = 0;
@@ -119,6 +155,8 @@ void loop() {
     if(checkSum(in)==in[8]) {
       value = (int)in[2]*256 + (int)in[3];
       str = String(value);
+      str += " ";
+      str += String(Temp);
     }
     else {
       //Serial.println("CheckSum failed");
