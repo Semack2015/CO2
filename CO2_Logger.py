@@ -18,41 +18,22 @@ time.sleep(2)
 ser = serial.Serial(port, 9600, timeout=1)
 
 while(1):
-    # d = 0
-    a1 = -1
+    d = -1
     ser.write(b'=')
     a = ser.readline()
-    # print(a)
     a = str(a)
+    a = re.sub(r"[b\'\\]", '', a)
+    a = re.sub(r"\.rn", '', a)
 
-    # a = a.replace('\'', '')
-    # a = a.replace('b', '')
-    # a = a.replace('\\', '')
-    # a = a.replace('r', '')
-    # a = a.replace('n', '')
-    if a == 'b\'BREAK\\r\\n\'':
-        a = "BREAK"
-        # d = 1
-    else:
-        if a == 'b\'CheckSum failed\\r\\n\'' :
-            a = "CheckSum failed"
-            # d = 1
-        else:
-            if a == 'b\'Preheat\\r\\n\'':
-                a = "Preheat"
-            else:
-                a = re.sub('[^0123456789]', "", a)
-                if a != '':
-                    a1 = int(a)
-            # if a.split(' ').__len__() == 2:
-            #     if a.split(' ')[0] != '':
-            #         a1 = int(a.split(' ')[0])
-            #     if a.split(' ')[1] != '':
-            #         a2 = int(a.split(' ')[1])
+    if a.find('#')>=0:
+        a = a.replace('#', '')
+        m = a.split(' ')
+        d = 0;
 
-    # a3 = a1 * 256 + a2
 
-    if a1 == -1:
+
+
+    if d == -1:
         print(time.strftime("%d.%m.%Y %H:%M:%S"), '\t', a)
         file = open('Port_Log.txt', 'a')
         file.write(time.strftime("%d.%m.%Y\t%H:%M:%S"))
@@ -61,12 +42,16 @@ while(1):
         file.write('\n')
         file.close()
     else:
-        print(time.strftime("%d.%m.%Y %H:%M:%S"), '\t', a1)
+        print(time.strftime("%d.%m.%Y %H:%M:%S"), '\t', m[0], ' ', m[1], ' ', m[2])
         date = time.strftime("%d.%m.%Y CO2_Log.txt")
         file = open(date, 'a+')
         file.write(time.strftime("%d.%m.%Y\t%H:%M:%S"))
         file.write('\t')
-        file.write(str(a1))
+        file.write(str(m[0]))
+        file.write('\t')
+        file.write(str(m[1]))
+        file.write('\t')
+        file.write(str(m[2]))
         file.write('\n')
         file.close()
 
