@@ -1,5 +1,8 @@
 #define WAITER 50
-#define HEATTIME 100000
+#define HEATTIME 1000
+
+#define LED_ERROR_STATE_OFF 0
+#define LED_ERROR_STATE_ON 1
 
 #define LED_ERROR_COUNTER 25
 
@@ -12,24 +15,33 @@
 #define BEEP_OFTEN 25
 #define WAIT_OFTEN 100
 
+#define BEEP_OUTPUT A0
+#define LED_ON 4
+#define LED_HEAT 5
 #define LED_ERROR 6
+
+#define DS_OUTPUT 9
+#define LATCH_OUTPUT 10
+#define CLOCK_OUTPUT 11
+#define MR_OUTPUT 12
 
 #include <SFE_BMP180.h>
 #include <Wire.h>
 
 int state = 1;
-int led_error_counter = 0;
-int led_error_state = 0;
-int beep_state = 0;
-int beep_counter = 0;
+int led_error_counter;
+int led_error_state;
+int beep_state;
+int beep_counter;
 bool heat = 0;
 byte x[] = {0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
 byte in[9];
 int k = 0;
 int waiter;
-int value;
+unsigned int value;
 String str = "Preheat.";
-
+int bug = 0;
+int delay_counter;
 uint32_t htime;
 double t;
 double p;
@@ -54,46 +66,47 @@ void setupTimer(){
 }
 
 ISR(TIMER4_COMPA_vect){
-//  digitalWrite(6, LOW);
-//  TIMSK4 &= 0b10111111;
-  if(led_error_state == 1){
+  if(bug) delay_counter--;
+  if(delay_counter<=0) bug = 0;
+    
+  if(led_error_state == LED_ERROR_STATE_ON){
     led_error_counter--;
     if(led_error_counter<=0){
-      led_error_state=0;
+      led_error_state=LED_ERROR_STATE_OFF;
       digitalWrite(LED_ERROR, LOW);
     }
   }
 
   if(beep_state == BEEP_STATE_OFF){
-    noTone(13);
+    noTone(BEEP_OUTPUT);
   }
   if(beep_state == BEEP_STATE_RARE){
-    if(beep_counter <= 0){
-      noTone(13);
+    if(beep_counter == 0){
+      noTone(BEEP_OUTPUT);
       beep_counter = BEEP_RARE + WAIT_RARE;
     }
-    if(beep_counter == BEEP_RARE) tone(13, 432);
+    if(beep_counter == BEEP_RARE) tone(BEEP_OUTPUT, 432);
     beep_counter--;
   }
   if(beep_state == BEEP_STATE_OFTEN){
-    if(beep_counter <= 0){
-      noTone(13);
+    if(beep_counter == 0){
+      noTone(BEEP_OUTPUT);
       beep_counter = BEEP_OFTEN + WAIT_OFTEN;
     }
-    if(beep_counter == BEEP_OFTEN) tone(13, 432);
+    if(beep_counter == BEEP_OFTEN) tone(BEEP_OUTPUT, 432);
     beep_counter--;
   }
 }
 
 void err(){
   digitalWrite(LED_ERROR, HIGH);
-  led_error_state = 1;
+  led_error_state = LED_ERROR_STATE_ON;
   led_error_counter = LED_ERROR_COUNTER;
 }
 
 void led(int a1, int a2){
-  digitalWrite(12, HIGH);
-  digitalWrite(10, HIGH); 
+  digitalWrite(MR_OUTPUT, HIGH);
+  digitalWrite(LATCH_OUTPUT, HIGH); 
   byte b=0;
   if(a1>400){
     digitalWrite(8, HIGH);
@@ -106,7 +119,7 @@ void led(int a1, int a2){
     }
     else break;
   }
-  shiftOut(9, 11, MSBFIRST, b);
+  shiftOut(DS_OUTPUT, CLOCK_OUTPUT, MSBFIRST, b);
   b = 0;
   if(a2>400){
     digitalWrite(7, HIGH);
@@ -119,9 +132,9 @@ void led(int a1, int a2){
     }
     else break;
   }
-  shiftOut(9, 11, MSBFIRST, b);
+  shiftOut(DS_OUTPUT, CLOCK_OUTPUT, MSBFIRST, b);
   
-  digitalWrite(10, LOW);
+  digitalWrite(LATCH_OUTPUT, LOW);
 }
 
 double getTemperature()
@@ -172,10 +185,21 @@ void setup() {
   
   setupTimer();
 
-  for(int i = 4; i<=13; i++) pinMode(i, OUTPUT);
-  digitalWrite(4, HIGH);
-  digitalWrite(5, HIGH);
-  digitalWrite(12, LOW);
+  pinMode(LED_ON, OUTPUT);
+  pinMode(LED_HEAT, OUTPUT);
+  pinMode(LED_ERROR, OUTPUT);
+  pinMode(7, OUTPUT);
+  pinMode(8, OUTPUT);
+  pinMode(DS_OUTPUT, OUTPUT);
+  pinMode(LATCH_OUTPUT, OUTPUT);
+  pinMode(CLOCK_OUTPUT, OUTPUT);
+  pinMode(LATCH_OUTPUT, OUTPUT);
+  pinMode(MR_OUTPUT, OUTPUT);
+  pinMode(BEEP_OUTPUT, OUTPUT);
+  
+  digitalWrite(LED_ON, HIGH);
+  digitalWrite(LED_HEAT, HIGH);
+  digitalWrite(MR_OUTPUT, LOW);
 }
 
 
@@ -187,7 +211,7 @@ void loop() {
   if(!heat) htime = millis();
   if(htime>HEATTIME&&!heat){
     heat = 1;
-    digitalWrite(5, LOW);
+    digitalWrite(LED_HEAT, LOW);
     str = "";
   }
 
@@ -201,18 +225,7 @@ void loop() {
     beep_state = BEEP_STATE_OFTEN;
   }
   
-//  if(value>4000&&!buzz&&millis()>buzztime+1000){
-//    tone(13, 432);
-//    buzz = 1;
-//    buzztime = millis();
-//  }
-//
-//  if(millis()>buzztime+20&&buzz){
-//    noTone(13);
-//    buzz = 0;
-//  }
-  
-  if(state==1&&heat){
+  if(state==1&&heat&&!bug){
     for(int i = 0; i<9; i++){
       Serial1.write(x[i]);
       in[i]=0x00;  
@@ -223,7 +236,7 @@ void loop() {
   }
   if(state==2){
     //Serial.print("Stage 2 ");
-    if(0||Serial1.available()){
+    if(Serial1.available()){
       //Serial.print(" Available ");
       waiter = WAITER;
       tmp = Serial1.read();
@@ -246,10 +259,10 @@ void loop() {
       if(waiter<=0){
         state = 1;
         k = 0;
-        delay(10);
         //Serial.println("BREAK");
         str = "BREAK.";
         err();
+        delay(10);
       }
     }
   }
@@ -269,9 +282,16 @@ void loop() {
     else {
       //Serial.println("CheckSum failed");
       str = "Checksum failed.";
+      err();
     }
-    //Serial.println(str);  
-    led(value, value);
+    if(value==0){
+      delay_counter = 1000;
+      bug = 1;
+      str = "BUG.";
+    }
+    else if(value>0&&value<=5000) 
+      led(value, value);
+    else str = "Error.";
     state = 1;
     delay(50);
   }
